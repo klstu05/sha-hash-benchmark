@@ -106,12 +106,52 @@ for i in 0..ITERATIONS_1 {
     black_box(i);
 }
 
-let total_ns: u128 = times.iter().sum();
-let total_calls: u128 = (ITERATIONS_1 * ITERATIONS_2) as u128;
+// 統計計算用の関数を追加
+fn calculate_stats(times: &[u128]) -> (f64, f64, f64) {
+    let n = times.len() as f64;
+    
+    // 平均値
+    let sum: u128 = times.iter().sum();
+    let mean = sum as f64 / n;
+    
+    // 中央値
+    let mut sorted = times.to_vec();
+    sorted.sort_unstable();
+    let median = if sorted.len() % 2 == 0 {
+        let mid = sorted.len() / 2;
+        (sorted[mid - 1] + sorted[mid]) as f64 / 2.0
+    } else {
+        sorted[sorted.len() / 2] as f64
+    };
+    
+    // 標準偏差
+    let variance: f64 = times.iter()
+        .map(|&x| {
+            let diff = x as f64 - mean;
+            diff * diff
+        })
+        .sum::<f64>() / n;
+    let std_dev = variance.sqrt();
+    
+    (mean, median, std_dev)
+}
 
+// 元のループの後を以下に置き換え
+let (mean_ns, median_ns, std_dev_ns) = calculate_stats(&times);
+
+println!("=== 統計情報（{}回の処理あたり） ===", ITERATIONS_2);
+println!("平均値:   {:.12} 秒", mean_ns / 1e9);
+println!("中央値:   {:.12} 秒", median_ns / 1e9);
+println!("標準偏差: {:.12} 秒", std_dev_ns / 1e9);
+println!();
+
+// 全体の合計をu128で計算してからf64に変換
+let total_ns: u128 = times.iter().sum();
+let total_calls: u128 = (ITERATIONS_1 * ITERATIONS_2) as u128;  // 2^24 = 16777216
 let avg_ns = total_ns as f64 / total_calls as f64;
 let avg_sec = avg_ns / 1e9;
 
-println!("1回あたりの平均実行時間: {:.12} 秒", avg_sec);
+println!("=== 1回あたりの平均実行時間 ===");
+println!("{:.12} 秒", avg_sec);
 
 }
